@@ -46,7 +46,7 @@ func save_game(slot: int, data: Dictionary) -> bool:
 		if backup_error != OK:
 			push_error("Falha ao preservar o salvamento anterior.")
 			return false
-	var replace_error := DirAccess.rename_absolute(ProjectSettings.globalize_path(temp_path), ProjectSettings.globalizeize_path(target))
+	var replace_error := DirAccess.rename_absolute(ProjectSettings.globalize_path(temp_path), ProjectSettings.globalize_path(target))
 	if replace_error != OK:
 		if FileAccess.file_exists(backup):
 			DirAccess.rename_absolute(ProjectSettings.globalize_path(backup), ProjectSettings.globalize_path(target))
