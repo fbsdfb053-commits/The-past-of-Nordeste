@@ -5,6 +5,7 @@ var SAVE_SLOT := 1
 var seeds := 5
 var harvested := 0
 var planted: Array[bool] = [false, false, false, false]
+var crop_visuals: Array[Node] = []
 
 var player: CharacterBody2D
 var hud_label: Label
@@ -20,6 +21,7 @@ func _ready() -> void:
 	_build_player()
 	_build_ui()
 	_restore_save()
+	_refresh_crop_visuals()
 	_setup_autosave()
 	_show_message("Bem-vindo ao sítio da família. Explore Mulungu!")
 
@@ -194,7 +196,7 @@ func _restore_save() -> void:
 func _save() -> void:
 	var data := {"player_x": player.position.x, "player_y": player.position.y, "day": day, "money": money, "seeds": seeds, "harvested": harvested, "planted": planted}
 	if SaveManager.save_game(SAVE_SLOT, data):
-		_show_message("Jogo salvo no espaço 1!")
+		_show_message("Jogo salvo no espaço %d!" % SAVE_SLOT)
 	else:
 		_show_message("Não foi possível salvar. Verifique o espaço em disco.")
 
@@ -207,12 +209,14 @@ func _interact() -> void:
 		var plot := clampi(int((player.position.x - 120.0) / 105.0), 0, 3)
 		if planted[plot]:
 			planted[plot] = false
+			_refresh_crop_visuals()
 			harvested += 1
 			money += 18
 			_show_message("Colheita feita! Você vendeu a produção por $ 18.")
 		elif seeds > 0:
 			seeds -= 1
 			planted[plot] = true
+			_refresh_crop_visuals()
 			_show_message("Semente plantada. Avance o dia com X / N para acompanhar o cultivo.")
 		else:
 			_show_message("Você não tem sementes. Por enquanto, explore e volte depois.")
@@ -230,3 +234,29 @@ func _advance_day() -> void:
 func _update_hud() -> void:
 	if hud_label != null:
 		hud_label.text = "MULUNGU  •  Dia %d  •  $ %d  •  Sementes: %d  •  Colheitas: %d  |  A: agir  X/N: novo dia  Y/I: salvar" % [day, money, seeds, harvested]
+
+func _refresh_crop_visuals() -> void:
+	for old_visual in crop_visuals:
+		if is_instance_valid(old_visual):
+			old_visual.queue_free()
+	crop_visuals.clear()
+	for i in range(planted.size()):
+		if not planted[i]:
+			continue
+		var plant := Node2D.new()
+		plant.position = Vector2(161 + i * 105, 334)
+		plant.z_index = 4
+		add_child(plant)
+		var stem := Polygon2D.new()
+		stem.polygon = PackedVector2Array([Vector2(-3, 13), Vector2(3, 13), Vector2(2, -7), Vector2(-2, -7)])
+		stem.color = Color("#6f9b45")
+		plant.add_child(stem)
+		var leaf_left := Polygon2D.new()
+		leaf_left.polygon = PackedVector2Array([Vector2(-1, 2), Vector2(-15, -5), Vector2(-4, -8)])
+		leaf_left.color = Color("#8eb65b")
+		plant.add_child(leaf_left)
+		var leaf_right := Polygon2D.new()
+		leaf_right.polygon = PackedVector2Array([Vector2(1, -1), Vector2(14, -9), Vector2(5, -10)])
+		leaf_right.color = Color("#9abd62")
+		plant.add_child(leaf_right)
+		crop_visuals.append(plant)
