@@ -11,6 +11,8 @@ var crop_visuals: Array[Node] = []
 var player: CharacterBody2D
 var hud_label: Label
 var message_label: Label
+var inventory_panel: PanelContainer
+var inventory_label: Label
 var day := 1
 var money := 120
 var paused := false
@@ -35,7 +37,9 @@ func _setup_input() -> void:
 	_add_key_action("quick_save", [KEY_I, KEY_Y])
 	_add_key_action("pause", [KEY_ESCAPE])
 	_add_key_action("advance_day", [KEY_N])
+	_add_key_action("inventory", [KEY_TAB])
 	_add_joy_action("advance_day", JOY_BUTTON_X)
+	_add_joy_action("inventory", JOY_BUTTON_LEFT_SHOULDER)
 	_add_joy_action("interact", JOY_BUTTON_A)
 	_add_joy_action("quick_save", JOY_BUTTON_Y)
 	_add_joy_action("pause", JOY_BUTTON_START)
@@ -147,8 +151,29 @@ func _build_ui() -> void:
 	message_label.add_theme_color_override("font_color", Color("#fff2d6"))
 	add_child(message_label)
 	_update_hud()
-
-func _physics_process(_delta: float) -> void:
+	inventory_panel = PanelContainer.new()
+	inventory_panel.position = Vector2(300, 150)
+	inventory_panel.size = Vector2(360, 220)
+	inventory_panel.z_index = 30
+	inventory_panel.visible = false
+	var inv_style := StyleBoxFlat.new()
+	inv_style.bg_color = Color("#304738")
+	inv_style.border_color = Color("#c5a16b")
+	inv_style.set_border_width_all(3)
+	inv_style.set_corner_radius_all(12)
+	inv_style.content_margin_left = 22
+	inv_style.content_margin_right = 22
+	inv_style.content_margin_top = 18
+	inv_style.content_margin_bottom = 18
+	inventory_panel.add_theme_stylebox_override("panel", inv_style)
+	add_child(inventory_panel)
+	inventory_label = Label.new()
+	inventory_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	inventory_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	inventory_label.add_theme_font_size_override("font_size", 20)
+	inventory_label.add_theme_color_override("font_color", Color("#fff2d6"))
+	inventory_panel.add_child(inventory_label)
+	_update_inventory()(_delta: float) -> void:
 	if paused:
 		return
 	var direction := Input.get_vector("move_left", "move_right", "move_up", "move_down")
@@ -162,6 +187,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		_interact()
 	elif event.is_action_pressed("advance_day"):
 		_advance_day()
+	elif event.is_action_pressed("inventory"):
+		inventory_panel.visible = not inventory_panel.visible
+		_update_inventory()
 	elif event.is_action_pressed("quick_save"):
 		_save()
 	elif event.is_action_pressed("pause"):
@@ -242,7 +270,12 @@ func _advance_day() -> void:
 
 func _update_hud() -> void:
 	if hud_label != null:
-		hud_label.text = "MULUNGU  •  Dia %d  •  $ %d  •  Sementes: %d  •  Colheitas: %d  |  A: agir  X/N: novo dia  Y/I: salvar" % [day, money, seeds, harvested]
+		hud_label.text = "MULUNGU  •  Dia %d  •  $ %d  •  Sementes: %d  •  Colheitas: %d  |  A: agir  X/N: dia  LB/Tab: bolsa  Y/I: salvar" % [day, money, seeds, harvested]
+	_update_inventory()
+
+func _update_inventory() -> void:
+	if inventory_label != null:
+		inventory_label.text = "MOCHILA\n\nSementes: %d\nColheitas realizadas: %d\nDinheiro: $ %d\n\nLB / Tab para fechar" % [seeds, harvested, money]
 
 func _refresh_crop_visuals() -> void:
 	for old_visual in crop_visuals:
