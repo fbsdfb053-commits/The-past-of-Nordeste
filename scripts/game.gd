@@ -176,7 +176,7 @@ func _build_ui() -> void:
 	_update_inventory()
 
 func _physics_process(_delta: float) -> void:
-	if paused:
+	if paused or (inventory_panel != null and inventory_panel.visible):
 		return
 	var direction := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	player.velocity = direction * PLAYER_SPEED
@@ -267,6 +267,7 @@ func _advance_day() -> void:
 		if planted[i]:
 			crop_days[i] += 1
 			money += 4
+	_refresh_crop_visuals()
 	_update_hud()
 	_show_message("Um novo dia começa em Mulungu. As plantações cresceram um pouco!")
 
