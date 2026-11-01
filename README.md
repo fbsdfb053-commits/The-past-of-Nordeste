@@ -8,7 +8,7 @@ Esta versão já contém:
 - tela inicial com três espaços independentes de salvamento;
 - sítio inicial inspirado em Mulungu, com movimentação em oito direções;
 - teclado e controle Xbox (analógico esquerdo, A, X, Y e Menu);
-- quatro canteiros onde é possível plantar, avançar o dia e colher;
+- quatro canteiros com plantio, crescimento em dois dias e colheita;
 - dinheiro, sementes, contagem de colheitas e posição persistidos;
 - salvamento manual, automático a cada cinco minutos e ao fechar;
 - arquivo temporário validado e cópia de segurança .bak.
@@ -24,6 +24,7 @@ Abra a pasta no Godot 4.7.2 e pressione F6/F5 ou use Executar projeto.
 - Analógico esquerdo / WASD / setas: mover
 - A / Enter / Espaço: plantar, colher ou interagir
 - X / N: avançar um dia
+- LB / Tab: abrir mochila
 - Y / I: salvar
 - Menu / Esc: pausar
 
