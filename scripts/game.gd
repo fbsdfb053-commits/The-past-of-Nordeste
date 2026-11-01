@@ -16,6 +16,7 @@ func _ready() -> void:
 	_build_player()
 	_build_ui()
 	_restore_save()
+	_setup_autosave()
 	_show_message("Bem-vindo ao sítio da família. Explore Mulungu!")
 
 func _setup_input() -> void:
@@ -155,6 +156,18 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed("pause"):
 		paused = not paused
 		_show_message("Jogo pausado." if paused else "Voltamos à aventura!")
+
+func _setup_autosave() -> void:
+	var timer := Timer.new()
+	timer.wait_time = 300.0
+	timer.one_shot = false
+	timer.timeout.connect(_save)
+	add_child(timer)
+	timer.start()
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST and is_inside_tree() and player != null:
+		_save()
 
 func _restore_save() -> void:
 	var data := SaveManager.load_game(SAVE_SLOT)
