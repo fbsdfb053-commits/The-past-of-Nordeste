@@ -1,7 +1,10 @@
 extends Node2D
 
 const PLAYER_SPEED := 175.0
-const SAVE_SLOT := 1
+var SAVE_SLOT := 1
+var seeds := 5
+var harvested := 0
+var planted: Array[bool] = [false, false, false, false]
 
 var player: CharacterBody2D
 var hud_label: Label
@@ -12,6 +15,7 @@ var paused := false
 
 func _ready() -> void:
 	_setup_input()
+	SAVE_SLOT = SaveManager.active_slot
 	_build_world()
 	_build_player()
 	_build_ui()
@@ -27,6 +31,8 @@ func _setup_input() -> void:
 	_add_key_action("interact", [KEY_ENTER, KEY_SPACE, KEY_E])
 	_add_key_action("quick_save", [KEY_I, KEY_Y])
 	_add_key_action("pause", [KEY_ESCAPE])
+	_add_key_action("advance_day", [KEY_N])
+	_add_joy_action("advance_day", JOY_BUTTON_X)
 	_add_joy_action("interact", JOY_BUTTON_A)
 	_add_joy_action("quick_save", JOY_BUTTON_Y)
 	_add_joy_action("pause", JOY_BUTTON_START)
@@ -150,7 +156,9 @@ func _physics_process(_delta: float) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("interact"):
-		_show_message("O sítio guarda muitas histórias. Em breve você poderá conversar com os moradores.")
+		_interact()
+	elif event.is_action_pressed("advance_day"):
+		_advance_day()
 	elif event.is_action_pressed("quick_save"):
 		_save()
 	elif event.is_action_pressed("pause"):
@@ -176,10 +184,15 @@ func _restore_save() -> void:
 	player.position = Vector2(float(data.get("player_x", 475.0)), float(data.get("player_y", 270.0)))
 	day = int(data.get("day", 1))
 	money = int(data.get("money", 120))
+	seeds = int(data.get("seeds", 5))
+	harvested = int(data.get("harvested", 0))
+	var saved_plots = data.get("planted", [false, false, false, false])
+	for i in range(min(4, saved_plots.size())):
+		planted[i] = bool(saved_plots[i])
 	_update_hud()
 
 func _save() -> void:
-	var data := {"player_x": player.position.x, "player_y": player.position.y, "day": day, "money": money}
+	var data := {"player_x": player.position.x, "player_y": player.position.y, "day": day, "money": money, "seeds": seeds, "harvested": harvested, "planted": planted}
 	if SaveManager.save_game(SAVE_SLOT, data):
 		_show_message("Jogo salvo no espaço 1!")
 	else:
@@ -189,6 +202,31 @@ func _show_message(value: String) -> void:
 	if message_label != null:
 		message_label.text = value
 
+func _interact() -> void:
+	if player.position.y > 285 and player.position.y < 380 and player.position.x > 105 and player.position.x < 835:
+		var plot := clampi(int((player.position.x - 120.0) / 105.0), 0, 3)
+		if planted[plot]:
+			planted[plot] = false
+			harvested += 1
+			money += 18
+			_show_message("Colheita feita! Você vendeu a produção por $ 18.")
+		elif seeds > 0:
+			seeds -= 1
+			planted[plot] = true
+			_show_message("Semente plantada. Avance o dia com X / N para acompanhar o cultivo.")
+		else:
+			_show_message("Você não tem sementes. Por enquanto, explore e volte depois.")
+	else:
+		_show_message("O sítio é seu novo lar. Aproxime-se dos canteiros para plantar e colher.")
+
+func _advance_day() -> void:
+	day += 1
+	for i in range(planted.size()):
+		if planted[i]:
+			money += 4
+	_update_hud()
+	_show_message("Um novo dia começa em Mulungu. As plantações cresceram um pouco!")
+
 func _update_hud() -> void:
 	if hud_label != null:
-		hud_label.text = "MULUNGU  •  Dia %d  •  $ %d     |     A/Enter: interagir   Y/I: salvar   Menu/Esc: pausa" % [day, money]
+		hud_label.text = "MULUNGU  •  Dia %d  •  $ %d  •  Sementes: %d  •  Colheitas: %d  |  A: agir  X/N: novo dia  Y/I: salvar" % [day, money, seeds, harvested]
