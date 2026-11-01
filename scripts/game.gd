@@ -173,7 +173,9 @@ func _build_ui() -> void:
 	inventory_label.add_theme_font_size_override("font_size", 20)
 	inventory_label.add_theme_color_override("font_color", Color("#fff2d6"))
 	inventory_panel.add_child(inventory_label)
-	_update_inventory()(_delta: float) -> void:
+	_update_inventory()
+
+func _physics_process(_delta: float) -> void:
 	if paused:
 		return
 	var direction := Input.get_vector("move_left", "move_right", "move_up", "move_down")
