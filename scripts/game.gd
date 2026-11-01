@@ -15,6 +15,7 @@ func _ready() -> void:
 	_build_world()
 	_build_player()
 	_build_ui()
+	_restore_save()
 	_show_message("Bem-vindo ao sítio da família. Explore Mulungu!")
 
 func _setup_input() -> void:
@@ -28,6 +29,10 @@ func _setup_input() -> void:
 	_add_joy_action("interact", JOY_BUTTON_A)
 	_add_joy_action("quick_save", JOY_BUTTON_Y)
 	_add_joy_action("pause", JOY_BUTTON_START)
+	_add_joy_axis("move_left", JOY_AXIS_LEFT_X, -1.0)
+	_add_joy_axis("move_right", JOY_AXIS_LEFT_X, 1.0)
+	_add_joy_axis("move_up", JOY_AXIS_LEFT_Y, -1.0)
+	_add_joy_axis("move_down", JOY_AXIS_LEFT_Y, 1.0)
 
 func _add_key_action(action: String, keys: Array) -> void:
 	if not InputMap.has_action(action):
@@ -40,6 +45,12 @@ func _add_key_action(action: String, keys: Array) -> void:
 func _add_joy_action(action: String, button: JoyButton) -> void:
 	var event := InputEventJoypadButton.new()
 	event.button_index = button
+	InputMap.action_add_event(action, event)
+
+func _add_joy_axis(action: String, axis: JoyAxis, value: float) -> void:
+	var event := InputEventJoypadMotion.new()
+	event.axis = axis
+	event.axis_value = value
 	InputMap.action_add_event(action, event)
 
 func _build_world() -> void:
@@ -144,6 +155,15 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed("pause"):
 		paused = not paused
 		_show_message("Jogo pausado." if paused else "Voltamos à aventura!")
+
+func _restore_save() -> void:
+	var data := SaveManager.load_game(SAVE_SLOT)
+	if data.is_empty():
+		return
+	player.position = Vector2(float(data.get("player_x", 475.0)), float(data.get("player_y", 270.0)))
+	day = int(data.get("day", 1))
+	money = int(data.get("money", 120))
+	_update_hud()
 
 func _save() -> void:
 	var data := {"player_x": player.position.x, "player_y": player.position.y, "day": day, "money": money}
