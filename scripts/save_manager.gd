@@ -3,6 +3,7 @@ extends Node
 const SAVE_DIR := "user://saves/"
 const SLOT_COUNT := 3
 const SAVE_VERSION := 1
+var active_slot := 1
 
 func _ready() -> void:
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(SAVE_DIR))
