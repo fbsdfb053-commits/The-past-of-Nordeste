@@ -5,6 +5,7 @@ var SAVE_SLOT := 1
 var seeds := 5
 var harvested := 0
 var planted: Array[bool] = [false, false, false, false]
+var crop_days: Array[int] = [0, 0, 0, 0]
 var crop_visuals: Array[Node] = []
 
 var player: CharacterBody2D
@@ -189,12 +190,15 @@ func _restore_save() -> void:
 	seeds = int(data.get("seeds", 5))
 	harvested = int(data.get("harvested", 0))
 	var saved_plots = data.get("planted", [false, false, false, false])
+	var saved_crop_days = data.get("crop_days", [0, 0, 0, 0])
 	for i in range(min(4, saved_plots.size())):
 		planted[i] = bool(saved_plots[i])
+	for i in range(min(4, saved_crop_days.size())):
+		crop_days[i] = int(saved_crop_days[i])
 	_update_hud()
 
 func _save() -> void:
-	var data := {"player_x": player.position.x, "player_y": player.position.y, "day": day, "money": money, "seeds": seeds, "harvested": harvested, "planted": planted}
+	var data := {"player_x": player.position.x, "player_y": player.position.y, "day": day, "money": money, "seeds": seeds, "harvested": harvested, "planted": planted, "crop_days": crop_days}
 	if SaveManager.save_game(SAVE_SLOT, data):
 		_show_message("Jogo salvo no espaço %d!" % SAVE_SLOT)
 	else:
@@ -207,15 +211,19 @@ func _show_message(value: String) -> void:
 func _interact() -> void:
 	if player.position.y > 285 and player.position.y < 380 and player.position.x > 105 and player.position.x < 835:
 		var plot := clampi(int((player.position.x - 120.0) / 105.0), 0, 3)
-		if planted[plot]:
+		if planted[plot] and crop_days[plot] >= 2:
 			planted[plot] = false
+			crop_days[plot] = 0
 			_refresh_crop_visuals()
 			harvested += 1
 			money += 18
 			_show_message("Colheita feita! Você vendeu a produção por $ 18.")
+		elif planted[plot]:
+			_show_message("A plantação ainda está crescendo. Espere mais %d dia(s)." % (2 - crop_days[plot]))
 		elif seeds > 0:
 			seeds -= 1
 			planted[plot] = true
+			crop_days[plot] = 0
 			_refresh_crop_visuals()
 			_show_message("Semente plantada. Avance o dia com X / N para acompanhar o cultivo.")
 		else:
@@ -227,6 +235,7 @@ func _advance_day() -> void:
 	day += 1
 	for i in range(planted.size()):
 		if planted[i]:
+			crop_days[i] += 1
 			money += 4
 	_update_hud()
 	_show_message("Um novo dia começa em Mulungu. As plantações cresceram um pouco!")
@@ -245,18 +254,19 @@ func _refresh_crop_visuals() -> void:
 			continue
 		var plant := Node2D.new()
 		plant.position = Vector2(161 + i * 105, 334)
+		var mature := crop_days[i] >= 2
 		plant.z_index = 4
 		add_child(plant)
 		var stem := Polygon2D.new()
 		stem.polygon = PackedVector2Array([Vector2(-3, 13), Vector2(3, 13), Vector2(2, -7), Vector2(-2, -7)])
-		stem.color = Color("#6f9b45")
+		stem.color = Color("#6f9b45" if mature else "#9a9b4f")
 		plant.add_child(stem)
 		var leaf_left := Polygon2D.new()
 		leaf_left.polygon = PackedVector2Array([Vector2(-1, 2), Vector2(-15, -5), Vector2(-4, -8)])
-		leaf_left.color = Color("#8eb65b")
+		leaf_left.color = Color("#8eb65b" if mature else "#b3a65a")
 		plant.add_child(leaf_left)
 		var leaf_right := Polygon2D.new()
 		leaf_right.polygon = PackedVector2Array([Vector2(1, -1), Vector2(14, -9), Vector2(5, -10)])
-		leaf_right.color = Color("#9abd62")
+		leaf_right.color = Color("#9abd62" if mature else "#c0b46a")
 		plant.add_child(leaf_right)
 		crop_visuals.append(plant)
